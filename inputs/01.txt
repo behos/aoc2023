@@ -1,24 +1,4 @@
-From: <Saved by Blink>
-Snapshot-Content-Location: https://adventofcode.com/2023/day/1/input
-Subject: 
-Date: Sun, 9 Jun 2024 15:55:07 -0000
-MIME-Version: 1.0
-Content-Type: multipart/related;
-	type="text/html";
-	boundary="----MultipartBoundary--qI6xahYcWod0vFj3yFDnsC7P1VO5jfbzRoipbj0krV----"
-
-
-------MultipartBoundary--qI6xahYcWod0vFj3yFDnsC7P1VO5jfbzRoipbj0krV----
-Content-Type: text/html
-Content-ID: <frame-F72A557C1B90641FA88C441F4A12D166@mhtml.blink>
-Content-Transfer-Encoding: quoted-printable
-Content-Location: https://adventofcode.com/2023/day/1/input
-
-<html><head><meta http-equiv=3D"Content-Type" content=3D"text/html; charset=
-=3Dwindows-1252"><link rel=3D"stylesheet" type=3D"text/css" href=3D"cid:css=
--92cdfcfc-5ca5-4da3-97a0-23431cab827f@mhtml.blink" /><meta name=3D"color-sc=
-heme" content=3D"light dark"></head><body><pre style=3D"word-wrap: break-wo=
-rd; white-space: pre-wrap;">29lzrxseven
+29lzrxseven
 9nnqljsixkzphvtmtr
 five73kskpfgbkcltwoccvf
 fiveq7
@@ -1018,12 +998,3 @@ one5seven
 kfjzhdtgkjtqthree7pvmxs
 7two5one8
 3eighteightllkbxkbs9zgznxtj8lfflcst
-</pre></body></html>
-------MultipartBoundary--qI6xahYcWod0vFj3yFDnsC7P1VO5jfbzRoipbj0krV----
-Content-Type: text/css
-Content-Transfer-Encoding: quoted-printable
-Content-Location: cid:css-92cdfcfc-5ca5-4da3-97a0-23431cab827f@mhtml.blink
-
-@charset "windows-1252";
-=0A
-------MultipartBoundary--qI6xahYcWod0vFj3yFDnsC7P1VO5jfbzRoipbj0krV------

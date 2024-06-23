@@ -1,12 +1,18 @@
-use std::{collections::BTreeMap, fs::read_to_string, str::FromStr};
+use std::{
+    collections::{BTreeMap, HashSet},
+    fs::read_to_string,
+    str::FromStr,
+};
 
 use anyhow::{Context, Error, Result};
 
 #[derive(Debug)]
 struct Schematic {
-    numbers: BTreeMap<(isize, isize), u32>,
+    numbers: BTreeMap<(isize, isize), u64>,
     symbols: BTreeMap<(isize, isize), char>,
 }
+
+type Connections = BTreeMap<(isize, isize), HashSet<u64>>;
 
 impl FromStr for Schematic {
     type Err = Error;
@@ -21,7 +27,7 @@ impl FromStr for Schematic {
                     '.' => {}
                     c if c.is_ascii_digit() => {
                         let n = c.to_digit(10).context("should be number")?;
-                        numbers.insert((x as isize, y as isize), n);
+                        numbers.insert((x as isize, y as isize), n as u64);
                     }
                     c => {
                         symbols.insert((x as isize, y as isize), c);
@@ -34,33 +40,42 @@ impl FromStr for Schematic {
 }
 
 impl Schematic {
-    fn sum(&self) -> u32 {
+    fn connections_and_sum(&self) -> (Connections, u64) {
         let mut total = 0;
         let mut current_number = None;
+        let mut connections = Connections::new();
         // going from left to right since our keys are ordered.
         for ((x, y), n) in &self.numbers {
+            let adjacent_symbols = self.adjacent_symbols(*x, *y);
             current_number = match current_number {
-                None => Some(((*x, *y), *n, self.is_adjacent(*x, *y))),
-                Some(((cx, cy), cn, is_adjacent)) if cx == *x && cy == *y - 1 => Some((
-                    (*x, *y),
-                    cn * 10 + n,
-                    is_adjacent || self.is_adjacent(*x, *y),
-                )),
-                Some((_, cn, is_adjacent)) => {
-                    if is_adjacent {
+                None => Some(((*x, *y), *n, adjacent_symbols)),
+                Some(((cx, cy), cn, mut cas)) if cx == *x && cy == *y - 1 => {
+                    cas.extend(adjacent_symbols);
+                    Some(((*x, *y), cn * 10 + n, cas))
+                }
+                Some((_, cn, cas)) => {
+                    if !cas.is_empty() {
                         total += cn;
                     }
-                    Some(((*x, *y), *n, self.is_adjacent(*x, *y)))
+                    for (sx, sy) in cas {
+                        connections.entry((sx, sy)).or_default().insert(cn);
+                    }
+                    Some(((*x, *y), *n, adjacent_symbols))
                 }
             }
         }
-        if let Some((_, cn, true)) = current_number {
-            total += cn
+        if let Some((_, cn, cas)) = current_number {
+            if !cas.is_empty() {
+                total += cn;
+            }
+            for (sx, sy) in cas {
+                connections.entry((sx, sy)).or_default().insert(cn);
+            }
         }
-        total
+        (connections, total)
     }
 
-    fn is_adjacent(&self, x: isize, y: isize) -> bool {
+    fn adjacent_symbols(&self, x: isize, y: isize) -> Vec<(isize, isize)> {
         [
             (x - 1, y - 1),
             (x - 1, y),
@@ -71,8 +86,22 @@ impl Schematic {
             (x + 1, y),
             (x + 1, y + 1),
         ]
-        .iter()
-        .any(|k| self.symbols.contains_key(k))
+        .into_iter()
+        .filter(|k| self.symbols.contains_key(k))
+        .collect()
+    }
+
+    fn gear_ratios(&self, connections: &Connections) -> u64 {
+        connections
+            .iter()
+            .filter_map(|((x, y), nums)| {
+                if nums.len() == 2 && self.symbols.get(&(*x, *y)) == Some(&'*') {
+                    Some(nums.iter().product::<u64>())
+                } else {
+                    None
+                }
+            })
+            .sum()
     }
 }
 
@@ -80,7 +109,8 @@ fn main() -> Result<()> {
     let contents = read_to_string("inputs/03.txt").expect("Should have been able to read the file");
     let trimmed = contents.trim();
     let schematic = Schematic::from_str(trimmed)?;
-    println!("part 1: {}", schematic.sum());
-    // println!("part 2: {}", minimum_cubes(&games));
+    let (connections, sum) = schematic.connections_and_sum();
+    println!("part 1: {}", sum);
+    println!("part 2: {}", schematic.gear_ratios(&connections));
     Ok(())
 }

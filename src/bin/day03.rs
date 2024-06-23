@@ -15,11 +15,11 @@ impl FromStr for Schematic {
         let mut numbers = BTreeMap::new();
         let mut symbols = BTreeMap::new();
 
-        for (x, row) in raw.split("\n").enumerate() {
+        for (x, row) in raw.split('\n').enumerate() {
             for (y, c) in row.chars().enumerate() {
                 match c {
                     '.' => {}
-                    c if c.is_digit(10) => {
+                    c if c.is_ascii_digit() => {
                         let n = c.to_digit(10).context("should be number")?;
                         numbers.insert((x as isize, y as isize), n);
                     }
@@ -41,9 +41,11 @@ impl Schematic {
         for ((x, y), n) in &self.numbers {
             current_number = match current_number {
                 None => Some(((*x, *y), *n, self.is_adjacent(*x, *y))),
-                Some(((cx, cy), cn, is_adjacent)) if cx == *x && cy == *y - 1 => {
-                    Some(((*x, *y), cn * 10 + n, is_adjacent || self.is_adjacent(*x, *y)))
-                }
+                Some(((cx, cy), cn, is_adjacent)) if cx == *x && cy == *y - 1 => Some((
+                    (*x, *y),
+                    cn * 10 + n,
+                    is_adjacent || self.is_adjacent(*x, *y),
+                )),
                 Some((_, cn, is_adjacent)) => {
                     if is_adjacent {
                         total += cn;

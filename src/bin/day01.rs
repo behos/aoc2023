@@ -8,11 +8,11 @@ fn main() {
 }
 
 fn sum_of_calibrations(content: &str) -> u64 {
-    content.split("\n").map(calibration_value).sum()
+    content.split('\n').map(calibration_value).sum()
 }
 
 fn calibration_value(line: &str) -> u64 {
-    let digits = line.chars().filter(|c| c.is_digit(10)).collect::<Vec<_>>();
+    let digits = line.chars().filter(|c| c.is_ascii_digit()).collect::<Vec<_>>();
     let first = digits.first().expect("must have a first digit");
     let last = digits.last().expect("must have a last digit");
     format!("{first}{last}")
@@ -21,7 +21,7 @@ fn calibration_value(line: &str) -> u64 {
 }
 
 fn sum_of_calibrations_spelled_out(content: &str) -> u64 {
-    content.split("\n").map(calibration_value_spelled_out).sum()
+    content.split('\n').map(calibration_value_spelled_out).sum()
 }
 
 fn calibration_value_spelled_out(line: &str) -> u64 {
@@ -34,9 +34,9 @@ fn calibration_value_spelled_out(line: &str) -> u64 {
     let mut last_digit = 0;
     let mut last_digit_idx = 0;
 
-    for i in 0..=9 {
+    for (i, value) in values.iter().enumerate() {
         let num_val = format!("{i}");
-        let search_strings = [num_val.as_str(), values[i]];
+        let search_strings = [num_val.as_str(), value];
         for val in search_strings {
             if let Some(idx) = line.find(val) {
                 if idx <= first_digit_idx {

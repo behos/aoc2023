@@ -6,8 +6,8 @@ fn main() -> Result<()> {
     let contents = read_to_string("inputs/02.txt").expect("Should have been able to read the file");
     let trimmed = contents.trim();
     let games = trimmed
-        .split("\n")
-        .map(|line| Game::from_str(line))
+        .split('\n')
+        .map(Game::from_str)
         .collect::<Result<Vec<_>>>()
         .context("failed to make games")?;
     println!("part 1: {}", possible_games(&games));
@@ -40,7 +40,7 @@ impl FromStr for GamePick {
         let mut blue = 0;
         let mut green = 0;
         for pair in colors {
-            let mut parts = pair.split(" ");
+            let mut parts = pair.split(' ');
             let number = parts
                 .next()
                 .context("should have a number")?
@@ -65,7 +65,7 @@ struct Game {
 
 impl Game {
     fn is_possible(&self, pick: &GamePick) -> bool {
-        self.picks.iter().all(|p| p.is_possible(&pick))
+        self.picks.iter().all(|p| p.is_possible(pick))
     }
 
     fn min_pick(&self) -> GamePick {

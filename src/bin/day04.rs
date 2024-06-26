@@ -13,7 +13,7 @@ impl FromStr for Card {
 
     fn from_str(raw: &str) -> Result<Self> {
         let mut parts = raw
-            .split(":")
+            .split(':')
             .last()
             .context("should be numbers")?
             .split(" | ");
@@ -75,7 +75,7 @@ fn main() -> Result<()> {
     let trimmed = contents.trim();
     let cards = trimmed
         .split('\n')
-        .map(|line| Card::from_str(line))
+        .map(Card::from_str)
         .collect::<Result<Vec<_>>>()?;
     let points = cards.iter().map(Card::points).sum::<u64>();
     println!("part 1: {}", points);
@@ -100,7 +100,7 @@ Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11
         let cards = input
             .trim()
             .split('\n')
-            .map(|line| Card::from_str(line))
+            .map(Card::from_str)
             .collect::<Result<Vec<_>>>()
             .expect("error parsing cards");
 

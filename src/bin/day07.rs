@@ -13,15 +13,21 @@ impl Hand {
         for label in &self.0 {
             (*counts.entry(*label).or_default()) += 1;
         }
-        let mut values = counts.into_iter().map(|(k, v)| (v, k)).collect::<Vec<_>>();
+        let joker = counts.remove(&1).unwrap_or_default();
+        let mut values = counts.into_values().collect::<Vec<_>>();
         values.sort_by(|a, b| b.cmp(a));
-        values.into_iter().unzip()
+        if !values.is_empty() {
+            values[0] += joker;
+        } else {
+            values.push(joker)
+        }
+        (values, self.0.clone())
     }
 }
 
 impl PartialOrd for Hand {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(&other))
+        Some(self.cmp(other))
     }
 }
 
@@ -81,22 +87,31 @@ fn main() -> Result<()> {
         .map(Bid::from_str)
         .collect::<Result<Vec<_>>>()
         .context("failed to make bids")?;
-    let score = get_score(&mut bids);
-    println!("part 1: {score}");
-    // println!("part 2: {}");
+    let score_pt1 = get_score(&mut bids);
+    into_pt2(&mut bids);
+    let score_pt2 = get_score(&mut bids);
+
+    println!("part 1: {score_pt1}");
+    println!("part 2: {score_pt2}");
     Ok(())
 }
 
-fn get_score(bids: &mut Vec<Bid>) -> usize {
+fn get_score(bids: &mut [Bid]) -> usize {
     bids.sort();
-    println!("{}", bids.len());
-    for bid in bids.iter() {
-        println!("{:?} -> {:?}", bid, bid.hand.valued());
-    }
     bids.iter()
         .enumerate()
         .map(|(rank, bid)| (rank + 1) * bid.bid as usize)
         .sum::<usize>()
+}
+
+fn into_pt2(bids: &mut [Bid]) {
+    for bid in bids.iter_mut() {
+        for label in bid.hand.0.iter_mut() {
+            if *label == 11 {
+                *label = 1
+            }
+        }
+    }
 }
 
 #[cfg(test)]

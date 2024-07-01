@@ -4,34 +4,65 @@ use anyhow::{Context, Error, Result};
 
 type Label = u8;
 
-#[derive(Debug, PartialEq, Eq)]
-struct Hand(Vec<Label>);
+trait Cards: PartialEq + Eq {
+    fn valued(&self) -> (Vec<u8>, Vec<Label>);
+}
 
-impl Hand {
+#[derive(Debug, PartialEq, Eq)]
+struct CardsPt1(Vec<Label>);
+
+#[derive(Debug, PartialEq, Eq)]
+struct CardsPt2(Vec<Label>);
+
+impl Cards for CardsPt1 {
     fn valued(&self) -> (Vec<u8>, Vec<Label>) {
         let mut counts: HashMap<Label, u8> = HashMap::new();
         for label in &self.0 {
             (*counts.entry(*label).or_default()) += 1;
         }
-        let mut values = counts.into_iter().map(|(k, v)| (v, k)).collect::<Vec<_>>();
+        let mut values = counts.into_iter().map(|(_, v)| v).collect::<Vec<_>>();
         values.sort_by(|a, b| b.cmp(a));
-        values.into_iter().unzip()
+        (values, self.0.clone())
     }
 }
 
-impl PartialOrd for Hand {
+impl Cards for CardsPt2 {
+    fn valued(&self) -> (Vec<u8>, Vec<Label>) {
+        let mut counts: HashMap<Label, u8> = HashMap::new();
+        for label in &self.0 {
+            (*counts.entry(*label).or_default()) += 1;
+        }
+        let joker = counts.remove(&11).unwrap_or_default();
+        let mut values = counts.into_iter().map(|(_, v)| v).collect::<Vec<_>>();
+        values.sort_by(|a, b| b.cmp(a));
+        if values.len() > 0 {
+            values[0] += joker;
+        } else {
+            values.push(joker)
+        }
+        (
+            values,
+            self.0.iter().cloned().map(|l| if l == 11 { 1 } else { l }).collect(),
+        )
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct Hand<T: Cards>(T);
+
+impl<T: Cards> PartialOrd for Hand<T> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(&other))
     }
 }
 
-impl Ord for Hand {
+impl<T: Cards> Ord for Hand<T> {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.valued().cmp(&other.valued())
+        self.0.valued().cmp(&other.0.valued())
     }
 }
 
-impl FromStr for Hand {
+impl FromStr for Hand<CardsPt1> {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -51,24 +82,46 @@ impl FromStr for Hand {
                 })
             })
             .collect::<Result<Vec<_>>>()?;
-        Ok(Hand(labels))
+        Ok(Hand(CardsPt1(labels)))
     }
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
-struct Bid {
-    hand: Hand,
+#[derive(Debug, PartialEq, Eq)]
+struct Bid<T: Cards> {
+    hand: Hand<T>,
     bid: u32,
 }
 
-impl FromStr for Bid {
+impl<T: Cards> PartialOrd for Bid<T> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl<T: Cards> Ord for Bid<T> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.hand.cmp(&other.hand)
+    }
+}
+
+impl FromStr for Bid<CardsPt1> {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut parts = s.split(' ');
-        let hand = Hand::from_str(parts.next().context("expecting a hand")?)?;
+        let hand = Hand::<CardsPt1>::from_str(parts.next().context("expecting a hand")?)?;
         let bid = parts.next().context("expecting a bid")?.parse::<u32>()?;
         Ok(Self { hand, bid })
+    }
+}
+
+impl From<Bid<CardsPt1>> for Bid<CardsPt2> {
+    fn from(value: Bid<CardsPt1>) -> Self {
+        let Hand(CardsPt1(cards)) = value.hand;
+        Self {
+            hand: Hand(CardsPt2(cards)),
+            bid: value.bid,
+        }
     }
 }
 
@@ -81,18 +134,17 @@ fn main() -> Result<()> {
         .map(Bid::from_str)
         .collect::<Result<Vec<_>>>()
         .context("failed to make bids")?;
-    let score = get_score(&mut bids);
-    println!("part 1: {score}");
-    // println!("part 2: {}");
+    let score_pt1 = get_score(&mut bids);
+    let mut bids = bids.into_iter().map(Bid::<CardsPt2>::from).collect();
+    let score_pt2 = get_score(&mut bids);
+
+    println!("part 1: {score_pt1}");
+    println!("part 2: {score_pt2}");
     Ok(())
 }
 
-fn get_score(bids: &mut Vec<Bid>) -> usize {
+fn get_score<T: Cards>(bids: &mut Vec<Bid<T>>) -> usize {
     bids.sort();
-    println!("{}", bids.len());
-    for bid in bids.iter() {
-        println!("{:?} -> {:?}", bid, bid.hand.valued());
-    }
     bids.iter()
         .enumerate()
         .map(|(rank, bid)| (rank + 1) * bid.bid as usize)

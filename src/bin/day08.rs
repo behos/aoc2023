@@ -1,6 +1,10 @@
-use std::{collections::BTreeMap, fs::read_to_string};
+use std::{
+    collections::BTreeMap,
+    fs::read_to_string,
+};
 
 use anyhow::{anyhow, Context, Error, Result};
+use num::integer::lcm;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum Direction {
@@ -37,21 +41,32 @@ struct Navigator {
 
 impl Navigator {
     fn navigate(&self) -> usize {
-        let mut idx = 0;
+        self.get_steps("AAA")
+    }
+
+    fn get_steps(&self, starting_point: &str) -> usize {
+        let mut direction_idx = 0;
         let mut steps = 0;
-        let mut current = "AAA";
-        let destination = "ZZZ";
-        while current != destination {
-            let next_direction = &self.directions[idx];
-            idx = (idx + 1) % self.directions.len();
-            steps += 1;
+        let mut current = starting_point;
+        while !current.ends_with('Z') {
+            let next_direction = &self.directions[direction_idx];
             let node = &self.network[current];
             current = match next_direction {
                 Direction::Left => &node.left,
                 Direction::Right => &node.right,
             };
+            direction_idx = (direction_idx + 1) % self.directions.len();
+            steps += 1;
         }
         steps
+    }
+
+    fn get_all_steps(&self) -> usize {
+        self.network.keys().filter_map(|key| if key.ends_with('A') {
+            Some(self.get_steps(key))
+        } else {
+            None
+        }).reduce(lcm).expect("couldn't get lcm")
     }
 }
 
@@ -59,8 +74,9 @@ fn main() -> Result<()> {
     let contents =
         read_to_string("inputs/08.txt").context("Should have been able to read the file")?;
     let navigator = parse(contents.trim())?;
+    let all_steps = navigator.get_all_steps();
     println!("part 1: {}", navigator.navigate());
-    // println!("part 2: {score_pt2}");
+    println!("part 2: {all_steps}");
     Ok(())
 }
 

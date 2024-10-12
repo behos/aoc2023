@@ -1,14 +1,30 @@
-use std::{fs::read_to_string, str::FromStr};
+use std::{fs::read_to_string, str::FromStr, hash::{Hash, DefaultHasher, Hasher}};
 
 use anyhow::{Context, Error, Result};
+use cached::proc_macro::cached;
 
 fn main() -> Result<()> {
     let raw = read_to_string("inputs/12.txt").context("Should have been able to read the file")?;
     let raw = raw.trim();
     let total = solve_for_input(raw)?;
     println!("part 1: {total}");
-    // println!("part 2: {distances}");
+    let part_2_input = expand_input(raw);
+    let total = solve_for_input(&part_2_input)?;
+    println!("part 2: {total}");
     Ok(())
+}
+
+fn expand_input(raw: &str) -> String {
+    raw.split('\n').map(expand_line).collect::<Vec<_>>().join("\n")
+}
+
+fn expand_line(raw: &str) -> String {
+    let mut parts = raw.split(' ');
+    let schema = parts.next().expect("should have schema");
+    let schema = [schema; 5].join("?");
+    let groups = parts.next().expect("should have groups");
+    let groups = [groups; 5].join(",");
+    format!("{schema} {groups}")
 }
 
 fn solve_for_input(raw: &str) -> Result<usize> {
@@ -23,7 +39,7 @@ fn solve_for_input(raw: &str) -> Result<usize> {
 
 type Record = Vec<Condition>;
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 enum Condition {
     Operational,
     Damaged,
@@ -75,6 +91,10 @@ impl Entry {
     }
 }
 
+#[cached(
+    convert = "{ cache_hash(record, groups) }",
+    key = "u64",
+)]
 fn try_arrangements(record: &[Condition], groups: &[usize]) -> usize {
     match (record, groups) {
         // If we don't have any more groups, then this arrangement works
@@ -111,6 +131,13 @@ fn try_arrangements(record: &[Condition], groups: &[usize]) -> usize {
             try_arrangements(&as_operational, g) + try_arrangements(&as_damaged, g)
         }
     }
+}
+
+fn cache_hash(record: &[Condition], groups: &[usize]) -> u64 {
+    let mut s = DefaultHasher::new();
+    record.hash(&mut s);
+    groups.hash(&mut s);
+    s.finish()
 }
 
 fn has_damaged(record: &[Condition]) -> bool {

@@ -69,13 +69,13 @@ impl FromStr for Diagram {
             for c in line.chars() {
                 let point = Point::try_from(c)?;
                 if point == Point::Start {
-                    start = (points.len(), line_points.len());
+                    start = (line_points.len(), points.len());
                 }
                 line_points.push(point);
             }
             points.push(line_points);
         }
-        let size = (points.len(), points[0].len());
+        let size = (points[0].len(), points.len());
         Ok(Self {
             points,
             start,
@@ -91,7 +91,7 @@ impl Diagram {
         direction: Direction,
     ) -> Option<((usize, usize), Direction, Point)> {
         let next = point_offset(self.size, (cur_x, cur_y), direction)?;
-        let next_point = &self.points[next.0][next.1];
+        let next_point = &self.points[next.1][next.0];
         match next_point {
             Point::Start => Some((next, direction, *next_point)),
             Point::Pipe(d1, d2) if d1.is_opposite(direction) => Some((next, *d2, *next_point)),

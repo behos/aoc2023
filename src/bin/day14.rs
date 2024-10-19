@@ -1,9 +1,9 @@
 mod util;
 
 use std::{
-    collections::{BTreeMap, BTreeSet},
+    collections::{BTreeMap, BTreeSet, HashMap},
     fs::read_to_string,
-    str::FromStr,
+    str::FromStr, hash::{DefaultHasher, Hasher, Hash},
 };
 
 use anyhow::{Context, Error, Result};
@@ -16,11 +16,13 @@ fn main() -> Result<()> {
     platform.tilt(Direction::N);
     let total_load = platform.total_load();
     println!("part 1: {total_load}");
-    // println!("part 2: {pt2}");
+    platform.spin(1_000_000_000);
+    let total_load = platform.total_load();
+    println!("part 2: {total_load}");
     Ok(())
 }
 
-#[derive(Default)]
+#[derive(Default, Hash)]
 struct BidiMap {
     x: BTreeMap<usize, BTreeSet<usize>>,
     y: BTreeMap<usize, BTreeSet<usize>>,
@@ -58,11 +60,11 @@ impl BidiMap {
             Direction::S => self
                 .x
                 .get(&x)
-                .and_then(|e| e.range(y..).next().map(|y| (x, *y))),
+                .and_then(|e| e.range(y+1..).next().map(|y| (x, *y))),
             Direction::E => self
                 .y
                 .get(&y)
-                .and_then(|e| e.range(x..).next().map(|x| (*x, y))),
+                .and_then(|e| e.range(x+1..).next().map(|x| (*x, y))),
             Direction::W => self
                 .y
                 .get(&y)
@@ -152,6 +154,32 @@ impl Platform {
     fn total_load(&self) -> usize {
         self.round_rocks.iter_by_x().map(|(_, y)| self.h - y).sum()
     }
+
+    fn spin(&mut self, reps: usize) {
+        let mut hashes = HashMap::new();
+        let mut step = 0;
+        let spin_directions = [Direction::N, Direction::W, Direction::S, Direction::E];
+        while step < reps {
+            let hash = self.hash_rocks();
+            if let Some(repeat) = hashes.get(&hash) {
+                let loop_size = step - repeat;
+                let loop_count = (reps - step) / loop_size;
+                step = step + loop_count * loop_size
+            } else {
+                hashes.insert(self.hash_rocks(), step);
+            }
+            for direction in spin_directions {
+                self.tilt(direction);
+            }
+            step += 1;
+        }
+    }
+
+    fn hash_rocks(&self) -> usize {
+        let mut hasher = DefaultHasher::new();
+        self.round_rocks.hash(&mut hasher);
+        hasher.finish() as usize
+    }
 }
 
 #[cfg(test)]
@@ -190,5 +218,7 @@ O.#..O.#.#
             println!();
         }
         assert_eq!(136, platform.total_load());
+        platform.spin(1_000_000_000);
+        assert_eq!(64, platform.total_load());
     }
 }

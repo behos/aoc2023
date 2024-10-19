@@ -1,6 +1,9 @@
+mod util;
+
 use std::{fs::read_to_string, str::FromStr};
 
 use anyhow::{bail, Context, Error, Result};
+use crate::util::direction::Direction;
 
 fn main() -> Result<()> {
     let raw = read_to_string("inputs/10.txt").context("Should have been able to read the file")?;
@@ -15,53 +18,6 @@ fn main() -> Result<()> {
     let counts = count_markers(&marked);
     println!("part 2: {counts:?}");
     Ok(())
-}
-
-#[derive(PartialEq, Eq, Clone, Copy)]
-enum Direction {
-    N,
-    S,
-    E,
-    W,
-}
-
-impl Direction {
-    fn offset(&self) -> (i32, i32) {
-        match self {
-            Direction::N => (-1, 0),
-            Direction::S => (1, 0),
-            Direction::E => (0, 1),
-            Direction::W => (0, -1),
-        }
-    }
-
-    fn is_opposite(&self, other: Direction) -> bool {
-        matches!(
-            (self, other),
-            (Direction::N, Direction::S)
-                | (Direction::S, Direction::N)
-                | (Direction::E, Direction::W)
-                | (Direction::W, Direction::E)
-        )
-    }
-
-    fn left(&self) -> Self {
-        match self {
-            Direction::N => Direction::W,
-            Direction::W => Direction::S,
-            Direction::S => Direction::E,
-            Direction::E => Direction::N,
-        }
-    }
-
-    fn right(&self) -> Self {
-        match self {
-            Direction::N => Direction::E,
-            Direction::E => Direction::S,
-            Direction::S => Direction::W,
-            Direction::W => Direction::N,
-        }
-    }
 }
 
 #[derive(PartialEq, Eq, Clone, Copy)]

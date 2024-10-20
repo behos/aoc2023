@@ -164,7 +164,7 @@ impl Platform {
             if let Some(repeat) = hashes.get(&hash) {
                 let loop_size = step - repeat;
                 let loop_count = (reps - step) / loop_size;
-                step = step + loop_count * loop_size
+                step += loop_count * loop_size
             } else {
                 hashes.insert(self.hash_rocks(), step);
             }

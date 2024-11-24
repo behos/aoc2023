@@ -86,6 +86,10 @@ impl<T> BidiMap<T> {
                 .and_then(|e| e.range(..x).next_back().map(|x| (*x, y))),
         }
     }
+
+    pub(crate) fn dimensions(&self) -> (usize, usize) {
+        (self.w, self.h)
+    }
 }
 
 impl<T> FromStr for BidiMap<T>

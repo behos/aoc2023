@@ -1,6 +1,6 @@
 #![allow(unused)]
 
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy, Hash)]
 pub(crate) enum Direction {
     N,
     S,
@@ -46,10 +46,48 @@ impl Direction {
 
     pub(crate) fn min(&self, p1: (usize, usize), p2: (usize, usize)) -> (usize, usize) {
         match (self, p1, p2) {
-            (Direction::N, (_, y1), (_, y2)) => if y1 > y2 { p1 } else { p2 },
-            (Direction::S, (_, y1), (_, y2)) => if y1 > y2 { p2 } else { p1 },
-            (Direction::E, (x1, _), (x2, _)) => if x1 > x2 { p2 } else { p1 },
-            (Direction::W, (x1, _), (x2, _)) => if x1 > x2 { p1 } else { p2 },
+            (Direction::N, (_, y1), (_, y2)) => {
+                if y1 > y2 {
+                    p1
+                } else {
+                    p2
+                }
+            }
+            (Direction::S, (_, y1), (_, y2)) => {
+                if y1 > y2 {
+                    p2
+                } else {
+                    p1
+                }
+            }
+            (Direction::E, (x1, _), (x2, _)) => {
+                if x1 > x2 {
+                    p2
+                } else {
+                    p1
+                }
+            }
+            (Direction::W, (x1, _), (x2, _)) => {
+                if x1 > x2 {
+                    p1
+                } else {
+                    p2
+                }
+            }
+        }
+    }
+
+    pub(crate) fn move_fowrard(
+        self,
+        (x, y): (usize, usize),
+        (mx, my): (usize, usize),
+    ) -> Option<(usize, usize)> {
+        let (dx, dy) = self.offset();
+        let (nx, ny) = (x as i32 + dx, y as i32 + dy);
+        if nx < 0 || nx >= mx as i32 || ny < 0 || ny >= my as i32 {
+            None
+        } else {
+            Some((nx as usize, ny as usize))
         }
     }
 }
